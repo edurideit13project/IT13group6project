@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreshBite Campus Market</title>
+<style>
+/* --- STYLES --- */
+body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f9f9f9; color: #222;}
+header {background: linear-gradient(90deg, #0b3d91, #ffcc00); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; color: #fff;}
+nav button {margin-left: 0.5rem; padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; background: #fff; color: #0b3d91; font-weight: bold; transition: 0.3s;}
+nav button:hover {background: #eee;}
+.container {max-width: 1000px; margin: 2rem auto; padding: 0 1rem;}
+h1,h2,h3 {color: #0b3d91;}
+/* Grid layout for vegetable menu */
+#vegetable-list {display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;}
+.card {background: #fff; padding: 1rem; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between;}
+.card p {margin: 0.2rem 0;}
+.card strong {font-size: 1.1em;}
+.btn {padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; transition: 0.2s;}
+.btn-primary {background: #0b3d91; color: #fff;}
+.btn-primary:hover {background: #082a63;}
+.btn-success {background: #28a745; color: #fff;}
+.btn-danger {background: #dc3545; color: #fff;}
+/* Modal styles */
+.modal {display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000;}
+.modal-content {background: #fff; padding: 2rem; border-radius: 10px; width: 90%; max-width: 400px; position: relative;}
+.modal-content label, .modal-content input {display: block; width: 100%; margin-top: 0.5rem; margin-bottom: 0.5rem;}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>FreshBite Campus Market 🛒</h1>
+    <nav>
+        <button id="nav-signup">Sign Up</button>
+        <button id="nav-login">Login</button>
+        <button id="nav-cart">Cart (0)</button>
+    </nav>
+</header>
+
+<div class="container">
+    <section id="home">
+        <h2>Welcome to FreshBite Campus Market 🥬</h2>
+        <p>Your everyday vegetable hub on campus. Browse, select, and get fresh vegetables delivered to your hostel for free!</p>
+        <button class="btn btn-primary" onclick="showSection('menu')">Browse Vegetables</button>
+    </section>
+
+    <section id="menu" style="display:none;">
+        <h2>Vegetable Menu</h2>
+        <div id="vegetable-list">Loading vegetables...</div>
+    </section>
+
+    <section id="cart-section" style="display:none;">
+        <h2>Your Cart</h2>
+        <div id="cart-items" style="margin-bottom: 20px;">Your cart is empty</div>
+        <hr>
+        <p style="font-size: 1.2em;">Total: *GHS <span id="cart-total">0.00</span>*</p>
+        <button class="btn btn-success" onclick="checkout()">Proceed to Checkout</button>
+        <button class="btn btn-danger" onclick="showSection('home')" style="margin-left: 10px;">Continue Shopping</button>
+    </section>
+</div>
+
+<div id="signup-modal" class="modal">
+    <div class="modal-content">
+        <h3>Sign Up</h3>
+        <form onsubmit="alert('Signup functionality is placeholder.'); return false;">
+            <label for="signup-email">Email:</label>
+            <input type="email" id="signup-email" required>
+            <label for="signup-pass">Password:</label>
+            <input type="password" id="signup-pass" required>
+            <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Register</button>
+            <button type="button" class="btn" onclick="closeModal('signup-modal')" style="background:#ccc; color:#222; margin-top:0.5rem;">Close</button>
+        </form>
+    </div>
+</div>
+
+<div id="login-modal" class="modal">
+    <div class="modal-content">
+        <h3>Login</h3>
+        <form onsubmit="alert('Login functionality is placeholder.'); return false;">
+            <label for="login-email">Email:</label>
+            <input type="email" id="login-email" required>
+            <label for="login-pass">Password:</label>
+            <input type="password" id="login-pass" required>
+            <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Login</button>
+            <button type="button" class="btn" onclick="closeModal('login-modal')" style="background:#ccc; color:#222; margin-top:0.5rem;">Close</button>
+        </form>
+    </div>
+</div>
+<script>
+// ===== 1. DATA (VEGETABLES & CART) =====
+// Prices are simulated in Ghana Cedi (GHS)
+let vegetables = [
+    {id: 1, name: 'Tomatoes 🍅', price: 10.50, unit: 'per kg'},
+    {id: 2, name: 'Onions (Red) 🧅', price: 8.00, unit: 'per kg'},
+    {id: 3, name: 'Carrots 🥕', price: 6.50, unit: 'per kg'},
+    {id: 4, name: 'Lettuce (Head)', price: 4.50, unit: 'per piece'},
+    {id: 5, name: 'Garden Eggs', price: 5.00, unit: 'per bowl'},
+    {id: 6, name: 'Spinach (Kontomire) 🥬', price: 3.00, unit: 'per bunch'},
+    {id: 7, name: 'Green Peppers', price: 7.00, unit: 'per bowl'},
+    {id: 8, name: 'Spring Onions', price: 2.50, unit: 'per bunch'},
+    {id: 9, name: 'Ginger & Garlic Kit', price: 12.00, unit: 'per pack'},
+    {id: 10, name: 'Cabbage', price: 5.50, unit: 'per piece'}
+];
+let cart = [];
+
+// ===== 2. CORE UTILITY FUNCTIONS =====
+
+// Function to switch visible sections
+function showSection(id) {
+    // Hide all main sections
+    document.getElementById('home').style.display = 'none';
+    document.getElementById('menu').style.display = 'none';
+    document.getElementById('cart-section').style.display = 'none';
+    
+    // Show the requested section
+    document.getElementById(id).style.display = 'block';
+
+    // Special action for menu (only render once when shown)
+    if (id === 'menu' && document.getElementById('vegetable-list').children.length < 5) {
+        renderMenu();
+    }
+}
+
+// Function to update the cart count in the header
+function updateCartHeader() {
+    const totalQty = cart.reduce((a, b) => a + b.qty, 0);
+    document.getElementById('nav-cart').textContent = Cart (${totalQty});
+}
+
+// ===== 3. MENU RENDERING & CART ACTIONS =====
+
+// Renders the vegetable cards
+function renderMenu() {
+    const list = document.getElementById('vegetable-list');
+    list.innerHTML = ''; // Clear "Loading..." text
+    vegetables.forEach(v => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+            <div>
+                <p><strong>${v.name}</strong></p>
+                <p>Price: GHS ${v.price.toFixed(2)} / ${v.unit}</p>
+            </div>
+            <button class="btn btn-primary" onclick="addToCart(${v.id})">Add to Cart</button>
+        `;
+        list.appendChild(div);
+    });
+}
+
+// Adds an item to the cart or increments its quantity
+function addToCart(id) {
+    const veg = vegetables.find(v => v.id === id);
+    let existing = cart.find(c => c.id === id);
+
+    if (existing) {
+        existing.qty++;
+    } else {
+        // Use spread operator to create a new object with qty
+        cart.push({...veg, qty: 1}); 
+    }
+    updateCartHeader();
+    console.log(Added ${veg.name}. Cart count: ${cart.length});
+}
+
+// Renders the cart items and total
+function renderCartItems() {
+    const container = document.getElementById('cart-items');
+    container.innerHTML = '';
+    
+    if (cart.length === 0) {
+        container.innerHTML = <div class="card"><p style="text-align:center; font-style:italic;">Your basket is empty. Add some fresh ingredients!</p></div>;
+    } else {
+        cart.forEach(item => {
+            const itemTotal = item.price * item.qty;
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.style.flexDirection = 'row';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+
+            div.innerHTML = `
+                <div style="flex-grow: 1;">
+                    <p><strong>${item.name}</strong></p>
+                    <p style="font-size:0.9em;">GHS ${item.price.toFixed(2)} x ${item.qty} = *GHS ${itemTotal.toFixed(2)}*</p>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <button class="btn" onclick="changeQuantity(${item.id}, -1)" style="background:#ff9900; color:#fff; padding: 0.3rem 0.6rem; margin: 0 5px;">-</button>
+                    <span style="font-weight:bold;">${item.qty}</span>
+                    <button class="btn" onclick="changeQuantity(${item.id}, 1)" style="background:#28a745; color:#fff; padding: 0.3rem 0.6rem; margin: 0 5px;">+</button>
+                    <button class="btn btn-danger" onclick="removeFromCart(${item.id})" style="margin-left: 10px;">Remove</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+    document.getElementById('cart-total').textContent = total.toFixed(2);
+}
+
+// Adjust quantity from the cart view
+function changeQuantity(id, delta) {
+    const item = cart.find(c => c.id === id);
+    if (item) {
+        item.qty += delta;
+        if (item.qty <= 0) {
+            removeFromCart(id); 
+        } else {
+            updateCartHeader();
+            renderCartItems(); 
+        }
+    }
+}
+
+// Remove item entirely from cart
+function removeFromCart(id) {
+    cart = cart.filter(c => c.id !== id);
+    updateCartHeader();
+    renderCartItems();
+}
+
+// Checkout process
+function checkout() {
+    if (cart.length === 0) {
+        alert('Your cart is empty. Please add items before checking out.');
+        return;
+    }
+    const finalTotal = document.getElementById('cart-total').textContent;
+    alert(✅ Order Placed! Total: GHS ${finalTotal}. Your fresh ingredients will be delivered to your hostel for free within minutes.);
+    
+    // Reset cart and go home
+    cart = [];
+    updateCartHeader();
+    showSection('home');
+}
+
+// ===== 4. MODAL LOGIC & EVENT LISTENERS =====
+
+function openModal(id) {
+    document.getElementById(id).style.display = 'flex';
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+// Main event listeners for navigation buttons
+document.getElementById('nav-signup').addEventListener('click', () => { openModal('signup-modal'); });
+document.getElementById('nav-login').addEventListener('click', () => { openModal('login-modal'); });
+
+document.getElementById('nav-cart').addEventListener('click', () => { 
+    renderCartItems(); // Ensure cart view is up to date
+    showSection('cart-section');
+});
+
+// Close modal if user clicks outside the content box
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
+
+// Initial function call to ensure the menu is ready when first opened
+// Note: We don't call showMenu() here, as we want to start on the home screen.
+// renderMenu is only called when 'Browse Vegetables' is clicked.
+</script>
+
+</body>
+</html>
